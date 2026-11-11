@@ -1,0 +1,667 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video tương tác - Nitrogen</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 24px 15px;
+  font-family: Arial, sans-serif;
+  background: #f2f5f9;
+  color: #17212b;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+}
+
+h1 {
+  text-align: center;
+  color: #155b91;
+  font-size: 28px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #667085;
+  margin-bottom: 22px;
+}
+
+.video-box {
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+video {
+  width: 100%;
+  display: block;
+  max-height: 620px;
+  background: #000;
+}
+
+.status {
+  padding: 14px;
+  margin: 15px 0;
+  border-left: 5px solid #2878b9;
+  background: #e6f1fc;
+  border-radius: 7px;
+  line-height: 1.5;
+  font-weight: bold;
+}
+
+.status.good {
+  background: #e6f7ed;
+  border-color: #16834a;
+}
+
+.status.bad {
+  background: #fff0f0;
+  border-color: #c83b3b;
+}
+
+.question-card {
+  display: none;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 20px;
+  box-shadow: 0 4px 15px #00000012;
+}
+
+.question-card.show {
+  display: block;
+}
+
+.question-title {
+  color: #1769aa;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.question-text {
+  font-size: 19px;
+  font-weight: bold;
+  line-height: 1.6;
+}
+
+.choices {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.choice {
+  background: white;
+  border: 2px solid #d5dce5;
+  border-radius: 9px;
+  padding: 14px;
+  text-align: left;
+  font-size: 16px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.choice:hover:not(:disabled) {
+  border-color: #1769aa;
+  background: #f0f7ff;
+}
+
+.choice:disabled {
+  cursor: default;
+}
+
+.choice.correct {
+  background: #e7f7ed;
+  border-color: #16834a;
+}
+
+.choice.incorrect {
+  background: #fff0f0;
+  border-color: #c83b3b;
+}
+
+.feedback {
+  margin-top: 15px;
+  font-weight: bold;
+  line-height: 1.5;
+}
+
+.feedback.good { color: #16834a; }
+.feedback.bad { color: #c83b3b; }
+
+.result {
+  display: none;
+  background: white;
+  text-align: center;
+  padding: 30px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.result.show { display: block; }
+
+.score {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1.8;
+}
+
+.restart {
+  background: #1769aa;
+  color: white;
+  border: none;
+  padding: 13px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+@media(max-width:600px) {
+  body { padding: 12px 8px; }
+  .question-card { padding: 16px; }
+  .question-text { font-size: 17px; }
+  .choice { font-size: 15px; }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>VIDEO TƯƠNG TÁC: NITROGEN</h1>
+<p class="subtitle">Môn Hóa học 11 – Bài 4: Nitrogen</p>
+
+<div class="video-box">
+  <video id="video" controls playsinline preload="metadata">
+    <source src="Video.mp4" type="video/mp4">
+    Trình duyệt không hỗ trợ video.
+  </video>
+</div>
+
+<div id="status" class="status">
+  Nhấn nút Phát để bắt đầu bài học.
+</div>
+
+<div id="questionCard" class="question-card">
+  <div id="questionTitle" class="question-title"></div>
+  <div id="questionText" class="question-text"></div>
+  <div id="choices" class="choices"></div>
+  <div id="feedback" class="feedback"></div>
+</div>
+
+<div id="result" class="result">
+  <h2>CHÚC MỪNG EM ĐÃ HOÀN THÀNH!</h2>
+  <p>Kết quả học tập:</p>
+  <div id="score" class="score"></div>
+  <button class="restart" id="restart">
+    Xem lại từ đầu
+  </button>
+</div>
+
+</div>
+
+<audio id="correctSound" src="dung.mp3" preload="auto"></audio>
+<audio id="wrongSound" src="sai.mp3" preload="auto"></audio>
+
+<script>
+
+// =====================================
+// 1. DỮ LIỆU CÂU HỎI
+// =====================================
+
+const questions = [
+
+{
+  time: 30,
+  title: "Câu 1. Trạng thái tự nhiên của Nitrogen",
+  text: "Khí nitrogen chiếm tỉ lệ bao nhiêu trong khí quyển Trái Đất?",
+  choices: [
+    "A. Khoảng 21% về thể tích.",
+    "B. Khoảng 78,1% về thể tích (hoặc 75,5% về khối lượng).",
+    "C. Khoảng 50% về thể tích.",
+    "D. Khoảng 3% về khối lượng."
+  ],
+  answer: 1
+},
+
+{
+  time: 92,
+  title: "Câu 2. Cấu tạo phân tử và tính trơ hóa học",
+  text: "Nguyên nhân chính khiến đơn chất nitrogen khá trơ về mặt hóa học ở nhiệt độ thường là gì?",
+  choices: [
+    "A. Do phân tử nitrogen có khối lượng rất nhẹ và chuyển động nhanh.",
+    "B. Do nguyên tử nitrogen có độ âm điện nhỏ và bán kính lớn.",
+    "C. Do hai nguyên tử N liên kết với nhau bằng liên kết ba rất bền vững với năng lượng liên kết lớn (945 kJ/mol).",
+    "D. Do nitrogen không tan trong nước và không duy trì sự sống, sự cháy."
+  ],
+  answer: 2
+},
+
+{
+  time: 124,
+  title: "Câu 3. Hiện tượng tự nhiên và chu trình cung cấp đạm",
+  text: "Dân gian có câu tục ngữ: “Lúa chiêm lấp ló đầu bờ / Hễ nghe tiếng sấm phất cờ mà lên”. Phản ứng hóa học nào xảy ra đầu tiên trong cơn mưa dông có sấm sét để tạo nguồn đạm tự nhiên cho cây trồng?",
+  choices: [
+    "A. N₂(g) + 3H₂(g) ⇌ 2NH₃(g)",
+    "B. N₂(g) + O₂(g) → 2NO(g)",
+    "C. 2NO(g) + O₂(g) → 2NO₂(g)",
+    "D. NH₃(g) + H₂O(l) ⇌ NH₄⁺ + OH⁻"
+  ],
+  answer: 1
+},
+
+{
+  time: 150,
+  title: "Câu 4. Tính chất hóa học của Nitrogen",
+  text: "Trong phản ứng tổng hợp ammonia: N₂(g) + 3H₂(g) ⇌ 2NH₃(g), đơn chất nitrogen thể hiện vai trò gì?",
+  choices: [
+    "A. Chất oxi hóa.",
+    "B. Chất khử.",
+    "C. Môi trường trơ.",
+    "D. Chất xúc tác phản ứng."
+  ],
+  answer: 0
+},
+
+{
+  time: 200,
+  title: "Câu 5. Ứng dụng của Nitrogen trong Y học",
+  text: "Trong lĩnh vực y học, nitrogen lỏng (hóa lỏng ở nhiệt độ rất thấp, −196 °C) thường được ứng dụng vào mục đích nào sau đây?",
+  choices: [
+    "A. Dùng làm khí gây mê đường hô hấp trong các ca phẫu thuật lớn.",
+    "B. Bảo quản các mẫu vật phẩm y tế, lưu trữ tế bào gốc và hỗ trợ điều trị mụn cóc hay một số bệnh ngoài da.",
+    "C. Tiêm trực tiếp vào tuần hoàn máu để hạ sốt khẩn cấp và tiêu diệt virus gây bệnh.",
+    "D. Pha chế làm dung dịch sát trùng làm sạch vết thương hở ngoài da."
+  ],
+  answer: 1
+}
+
+];
+
+
+// =====================================
+// 2. CÁC BIẾN TRẠNG THÁI
+// =====================================
+
+const video = document.getElementById("video");
+const card = document.getElementById("questionCard");
+const titleBox = document.getElementById("questionTitle");
+const textBox = document.getElementById("questionText");
+const choicesBox = document.getElementById("choices");
+const feedback = document.getElementById("feedback");
+const statusBox = document.getElementById("status");
+const resultBox = document.getElementById("result");
+
+const correctSound = document.getElementById("correctSound");
+const wrongSound = document.getElementById("wrongSound");
+
+let currentQuestion = 0;
+let correctCount = 0;
+let wrongCount = 0;
+
+let questionOpen = false;
+let waitingForSound = false;
+let lastPauseQuestion = -1;
+
+
+// =====================================
+// 3. HÀM HIỂN THỊ TRẠNG THÁI
+// =====================================
+
+function setStatus(message, type = "") {
+  statusBox.textContent = message;
+  statusBox.className = "status " + type;
+}
+
+
+// =====================================
+// 4. DỪNG ÂM THANH
+// =====================================
+
+function stopSounds() {
+  [correctSound, wrongSound].forEach(sound => {
+    sound.pause();
+    sound.currentTime = 0;
+  });
+}
+
+
+// =====================================
+// 5. HIỂN THỊ CÂU HỎI
+// =====================================
+
+function showQuestion(index) {
+
+  const q = questions[index];
+
+  video.pause();
+
+  questionOpen = true;
+  waitingForSound = false;
+
+  card.classList.add("show");
+  resultBox.classList.remove("show");
+
+  titleBox.textContent = q.title;
+  textBox.textContent = q.text;
+
+  choicesBox.innerHTML = "";
+
+  feedback.textContent = "";
+  feedback.className = "feedback";
+
+  q.choices.forEach((choice, i) => {
+
+    const button = document.createElement("button");
+
+    button.className = "choice";
+    button.textContent = choice;
+    button.type = "button";
+
+    button.onclick = () => chooseAnswer(i, button);
+
+    choicesBox.appendChild(button);
+
+  });
+
+  setStatus(
+    "Video tạm dừng. Hãy chọn đáp án cho câu hỏi " +
+    (index + 1) + "."
+  );
+}
+
+
+// =====================================
+// 6. PHÁT ÂM THANH
+// =====================================
+
+function playSound(sound, onFinish) {
+
+  stopSounds();
+
+  let finished = false;
+
+  function finishOnce() {
+    if (finished) return;
+    finished = true;
+    sound.removeEventListener("ended", finishOnce);
+    onFinish();
+  }
+
+  sound.addEventListener("ended", finishOnce);
+
+  sound.currentTime = 0;
+
+  sound.play().catch(() => {
+    finishOnce();
+  });
+
+}
+
+
+// =====================================
+// 7. XỬ LÝ KHI TRẢ LỜI ĐÚNG
+// =====================================
+
+function afterCorrectSound() {
+
+  if (!waitingForSound) return;
+
+  waitingForSound = false;
+
+  if (currentQuestion >= questions.length) {
+    finishVideo();
+    return;
+  }
+
+  questionOpen = false;
+
+  card.classList.remove("show");
+
+  setStatus("Chính xác! Video sẽ tiếp tục.", "good");
+
+  video.play().catch(() => {
+    setStatus(
+      "Đáp án đã được ghi nhận. Nhấn Phát để xem tiếp.",
+      "good"
+    );
+  });
+
+}
+
+
+// =====================================
+// 8. XỬ LÝ KHI TRẢ LỜI SAI
+// =====================================
+
+function afterWrongSound() {
+
+  if (!waitingForSound) return;
+
+  waitingForSound = false;
+
+  const q = questions[currentQuestion];
+
+  // Ẩn câu hỏi cũ để video có thể chạy lại.
+  questionOpen = false;
+  card.classList.remove("show");
+
+  // Đặt lại trạng thái dừng để câu hỏi được kích hoạt lần nữa.
+  lastPauseQuestion = -1;
+
+  // Tua video lùi 10 giây so với mốc câu hỏi.
+  video.currentTime = Math.max(0, q.time - 10);
+
+  setStatus(
+    "Chưa chính xác! Video đang phát lại đoạn trước câu hỏi 10 giây.",
+    "bad"
+  );
+
+  video.play().catch(() => {
+    setStatus(
+      "Chưa chính xác. Nhấn Phát để xem lại đoạn video.",
+      "bad"
+    );
+  });
+
+}
+
+
+// =====================================
+// 9. CHỌN ĐÁP ÁN
+// =====================================
+
+function chooseAnswer(selected, selectedButton) {
+
+  if (!questionOpen || waitingForSound) return;
+
+  const q = questions[currentQuestion];
+
+  const buttons = [
+    ...choicesBox.querySelectorAll("button")
+  ];
+
+  // Khóa các lựa chọn trong lúc xử lý.
+  buttons.forEach(button => {
+    button.disabled = true;
+  });
+
+  waitingForSound = true;
+
+  if (selected === q.answer) {
+
+    correctCount++;
+
+    selectedButton.classList.add("correct");
+
+    feedback.textContent =
+      "✓ Chính xác! Em đã trả lời đúng.";
+
+    feedback.className = "feedback good";
+
+    currentQuestion++;
+
+    setStatus("Chúc mừng! Đáp án chính xác.", "good");
+
+    playSound(correctSound, afterCorrectSound);
+
+  } else {
+
+    wrongCount++;
+
+    selectedButton.classList.add("incorrect");
+
+    buttons[q.answer].classList.add("correct");
+
+    feedback.textContent =
+      "✗ Chưa chính xác! Hãy xem lại video và thử lại.";
+
+    feedback.className = "feedback bad";
+
+    setStatus("Đáp án chưa chính xác.", "bad");
+
+    playSound(wrongSound, afterWrongSound);
+
+  }
+
+}
+
+
+// =====================================
+// 10. KIỂM TRA MỐC DỪNG VIDEO
+// =====================================
+
+video.addEventListener("timeupdate", () => {
+
+  if (
+    questionOpen ||
+    waitingForSound ||
+    currentQuestion >= questions.length
+  ) {
+    return;
+  }
+
+  const q = questions[currentQuestion];
+
+  if (
+    video.currentTime >= q.time &&
+    lastPauseQuestion !== currentQuestion
+  ) {
+
+    // Đánh dấu câu hỏi đã được kích hoạt.
+    lastPauseQuestion = currentQuestion;
+
+    // Đặt chính xác vị trí dừng.
+    video.currentTime = q.time;
+
+    showQuestion(currentQuestion);
+
+  }
+
+});
+
+
+// =====================================
+// 11. KẾT THÚC VIDEO
+// =====================================
+
+function finishVideo() {
+
+  video.pause();
+
+  questionOpen = false;
+  waitingForSound = false;
+
+  card.classList.remove("show");
+
+  resultBox.classList.add("show");
+
+  document.getElementById("score").innerHTML =
+    "Số câu trả lời đúng: " +
+    correctCount + " / " + questions.length +
+    "<br>Số lượt trả lời sai: " + wrongCount;
+
+  setStatus(
+    "Chúc mừng! Em đã hoàn thành video tương tác.",
+    "good"
+  );
+
+}
+
+video.addEventListener("ended", () => {
+
+  if (currentQuestion >= questions.length) {
+    finishVideo();
+  } else if (!questionOpen) {
+    setStatus(
+      "Video kết thúc trước khi hoàn thành các câu hỏi. Hãy kiểm tra thời lượng video.",
+      "bad"
+    );
+  }
+
+});
+
+
+// =====================================
+// 12. NÚT XEM LẠI TỪ ĐẦU
+// =====================================
+
+document.getElementById("restart").onclick = () => {
+
+  stopSounds();
+
+  currentQuestion = 0;
+  correctCount = 0;
+  wrongCount = 0;
+
+  questionOpen = false;
+  waitingForSound = false;
+
+  lastPauseQuestion = -1;
+
+  card.classList.remove("show");
+  resultBox.classList.remove("show");
+
+  video.currentTime = 0;
+  video.pause();
+
+  setStatus("Đã bắt đầu lại. Nhấn Phát để xem video.");
+
+};
+
+
+// =====================================
+// 13. KIỂM TRA LỖI FILE
+// =====================================
+
+video.addEventListener("error", () => {
+  setStatus(
+    "Không tìm thấy Video.mp4. Hãy kiểm tra tên file và thư mục.",
+    "bad"
+  );
+});
+
+correctSound.addEventListener("error", () => {
+  if (waitingForSound && currentQuestion > 0) {
+    afterCorrectSound();
+  }
+});
+
+wrongSound.addEventListener("error", () => {
+  if (waitingForSound && currentQuestion < questions.length) {
+    afterWrongSound();
+  }
+});
+
+</script>
+
+</body>
+</html>
